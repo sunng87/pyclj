@@ -103,7 +103,6 @@ class CljDecoder(object):
             
         t, coll = self.__get_type_from_char(c)
         if coll:
-            self.value_stack.append(list())
             ## move cursor 
             if t == "set":
                 ## skip {
@@ -119,11 +118,13 @@ class CljDecoder(object):
             elif t == "map":
                 self.terminator = "}"
                 self.container = "dict"
-
+                
+            self.value_stack.append(([], self.terminator, self.container))
             return None
         else:
             v = None ## token value
             e = None ## end char
+            r = True ## the token contains data or not
 
             if t == "boolean":
                 if c == 't':
@@ -169,12 +170,14 @@ class CljDecoder(object):
                 e = c
                 v = ''.join(buf[:-1]).decode("string-escape")
             else:
-                e = fd.read(1)
+                r = False
+                e = c
 
             if e is self.terminator:
-                self.value_stack[-1].append(v)
-                current_scope = self.value_stack.pop()
-
+                current_scope, self.terminator, self.container = self.value_stack.pop()
+                if r:
+                    current_scope.append(v)
+                    
                 if self.container == "set":
                     v = set(current_scope)
                 elif self.container == "list":
@@ -185,7 +188,7 @@ class CljDecoder(object):
                         v[current_scope[i]] = current_scope[i+1]
 
             if len(self.value_stack) > 0:
-                self.value_stack[-1].append(v)
+                self.value_stack[-1][0].append(v)
 
             return v
                 
