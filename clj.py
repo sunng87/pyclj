@@ -39,8 +39,7 @@
 
 __all__ = ["dump", "dumps", "load", "loads"]
 
-
-import re
+import os
 from cStringIO import StringIO
 
 def number(v):
@@ -168,7 +167,7 @@ class CljDecoder(object):
                     c = fd.read(1)
                     buf.append(c)
                 e = c
-                v = ''.join(buf[:-1]).decode("string-escape")
+                v = ''.join(buf[:-1]).decode("unicode-escape")
             else:
                 r = False
                 e = c
@@ -191,10 +190,80 @@ class CljDecoder(object):
                 self.value_stack[-1][0].append(v)
 
             return v
-                
+
+
+class CljEncoder(object):
+    def __init__(self, data, fd):
+        self.data = data
+        self.fd = fd
+
+    def encode(self):
+        self.__do_encode(self.data)
+
+    def get_type(self,t):
+        if t is None:
+            return ("None", False)
+        elif isinstance(t, str):
+            return ("string", False)
+        elif isinstance(t, bool):
+            return ("boolean", False)
+        elif isinstance(t, float) or isinstance(t, int):
+            return ("number", False)
+        elif isinstance(t, dict):
+            return ("dict", True)
+        elif isinstance(t, list):
+            return ("list", True)
+        elif isinstance(t, set):
+            return ("set", True)
+        else:
+            return ("unknown", False)
+
+    def __do_encode(self, d):
+        fd = self.fd
+        t,coll = self.get_type(d)
+
+        if coll:
+            if t == "dict":
+                fd.write("{")
+                for k,v in d.items():
+                    self.__do_encode(k)
+                    fd.write(" ")
+                    self.__do_encode(v)
+                    fd.write(" ")
+                fd.seek(-1, os.SEEK_CUR)
+                fd.write("}")
+            elif t == "list":
+                fd.write("[")
+                for v in d:
+                    self.__do_encode(v)
+                    fd.write(" ")
+                fd.seek(-1, os.SEEK_CUR)
+                fd.write("]")
+            elif t == "set":
+                fd.write("#{")
+                for v in d:
+                    self.__do_encode(v)
+                    fd.write(" ")
+                fd.seek(-1, os.SEEK_CUR)
+                fd.write("}")
+        else:
+            if t == "number":
+                fd.write(str(d))
+            elif t == "string":
+                s = d.encode("unicode-escape").replace('"', '\\"')
+                fd.write('"'+s+'"')
+            elif t == "boolean":
+                if d:
+                    fd.write('true')
+                else:
+                    fd.write('false')
+            elif t == 'None':
+                fd.write('nil')
+            else:
+                fd.write('"'+str(d)+'"')
     
 def dump(obj, fp):
-    pass
+    return CljEncoder(obj, fp).encode()
 
 def dumps(obj):
     buf = StringIO()
@@ -211,5 +280,5 @@ def loads(s):
     buf = StringIO(s)
     result = load(buf)
     buf.close()
-    return result 
+    return result
 

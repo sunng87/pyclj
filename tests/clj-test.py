@@ -24,6 +24,25 @@ class CljLoadTest(unittest.TestCase):
         for k,v in self.data.items():
             self.assertEqual(clj.loads(k), v)
 
+class CljDumpTest(unittest.TestCase):
+    def setUp(self):
+        self.data = {'"helloworld"': "helloworld",
+                     '"hello\\"world"': "hello\"world",
+                     '12': 12,
+                     '12.334': 12.334,
+                     'true': True,
+                     'false': False,
+                     'nil': None,
+                     "[1 2 3]":[1,2,3],
+                     '{"a" 1 "b" 2}':{"a":1, "b":2},
+                     '#{1}': set([1]),
+                     '["h" nil [1 2 3] {"w" true}]':["h",None,[1,2,3],{"w":True}]
+                     }
+        
+    def test_all_data(self):
+        for k,v in self.data.items():
+            self.assertEqual(k, clj.dumps(v))
+
 
 if __name__ == '__main__':
     unittest.main()            
