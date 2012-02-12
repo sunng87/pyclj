@@ -167,7 +167,7 @@ class CljDecoder(object):
                     c = fd.read(1)
                     buf.append(c)
                 e = c
-                v = ''.join(buf[:-1])
+                v = ''.join(buf[:-1]).decode("string-escape")
             else:
                 e = fd.read(1)
 
