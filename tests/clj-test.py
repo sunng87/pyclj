@@ -10,7 +10,12 @@ class CljLoadTest(unittest.TestCase):
                      "true": True,
                      "false": False,
                      "nil": None,
-                     ":hello": "hello"}
+                     ":hello": "hello",
+                     "[1 2]": [1,2],
+                     "#{true \"hello\" 12}": set([True, "hello", 12]),
+                     "(\\a \\b \\c \\d)": ["a","b","c","d"],
+                     "{:a 1 :b 2 :c 3 :d 4}": {"a":1, "b":2, "c":3,"d":4},
+                     "[1     2 3,4]": [1,2,3,4]}
 
     def test_all_data(self):
         for k,v in self.data.items():

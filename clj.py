@@ -119,6 +119,8 @@ class CljDecoder(object):
             elif t == "map":
                 self.terminator = "}"
                 self.container = "dict"
+
+            return None
         else:
             v = None ## token value
             e = None ## end char
@@ -170,6 +172,7 @@ class CljDecoder(object):
                 e = fd.read(1)
 
             if e is self.terminator:
+                self.value_stack[-1].append(v)
                 current_scope = self.value_stack.pop()
 
                 if self.container == "set":
