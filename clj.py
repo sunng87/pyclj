@@ -186,7 +186,7 @@ class CljDecoder(object):
 
             if len(self.value_stack) > 0:
                 self.value_stack[-1].append(v)
-            print "debug=== ",v, e
+
             return v
                 
     
