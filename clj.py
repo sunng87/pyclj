@@ -44,7 +44,7 @@ import re
 from cStringIO import StringIO
 
 def number(v):
-    r = nil
+    r = None
     try:
         r = int(v)
     except ValueError:
@@ -55,7 +55,8 @@ class CljDecoder(object):
     def __init__(self, fd):
         self.fd = fd
         self.value_stack = []
-        self.stop_chars = [" ", ","]
+        self.stop_chars = [" ", ",", "\n", "\r"]
+        self.terminator = None ## for collection type
 
     def decode(self):
         while True:
@@ -69,29 +70,31 @@ class CljDecoder(object):
         * a flag to indicate if it's a collection
         """
         if c.isdigit():
-            return ("number", false)
+            return ("number", False)
         elif c == 't' or c == 'f': ## true/false
-            return ("boolean", false)
+            return ("boolean", False)
         elif c == 'n': ## nil
-            return ("nil", false)
+            return ("nil", False)
         elif c == '\\' :
-            return ("char", false)
+            return ("char", False)
         elif c == ':':
-            return ("keyword", false)
+            return ("keyword", False)
         elif c == '"':
-            return ("string", false)
+            return ("string", False)
         elif c == '#':
-            return ("set", true)
+            return ("set", True)
         elif c == '{':
-            return ("map", true)
+            return ("map", True)
         elif c == '(':
-            return ("list", true)
+            return ("list", True)
         elif c == '[':
-            return ('vector', true)
+            return ('vector', True)
         else:
-            return (None, false)
+            return (None, False)
 
     def __read_token(self):
+        fd = self.fd
+        
         c = fd.read(1)
 
         ## skip all stop chars if necessary 
@@ -102,7 +105,7 @@ class CljDecoder(object):
         if coll:
             self.value_stack.append(list())
             ## move cursor 
-            if t == "set"
+            if t == "set":
                 ## skip {
                 fd.read(1)
                 self.terminator = "}"
@@ -126,7 +129,7 @@ class CljDecoder(object):
                     v = True
                 else:
                     e = fd.read(5)[-1]
-                    v = True
+                    v = False
 
             elif t == "char":
                 v = fd.read(1)
@@ -138,7 +141,7 @@ class CljDecoder(object):
 
             elif t == "number":
                 buf = [c]
-                while c is not self.terminator and c is not -1 and c is not in self.stop_chars:
+                while c is not self.terminator and c is not "" and c not in self.stop_chars:
                     c = fd.read(1)
                     buf.append(c)
                 e = c
@@ -146,8 +149,8 @@ class CljDecoder(object):
                 v = number(numstr)
 
             elif t == "keyword":
-                buf = []
-                while c is not self.terminator and c is not -1 and c is not in self.stop_chars:
+                buf = []    ##skip the leading ":"
+                while c is not self.terminator and c is not "" and c not in self.stop_chars:
                     c = fd.read(1)
                     buf.append(c)
                 e = c
@@ -180,6 +183,7 @@ class CljDecoder(object):
 
             if len(self.value_stack) > 0:
                 self.value_stack[-1].append(v)
+            print "debug=== ",v, e
             return v
                 
     
@@ -194,7 +198,8 @@ def dumps(obj):
     return result
 
 def load(fp):
-    pass
+    decoder = CljDecoder(fp)
+    return decoder.decode()
 
 def loads(s):
     buf = StringIO(s)
