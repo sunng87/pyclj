@@ -4,7 +4,7 @@ except ImportError:
     from distutils.core import setup
 
 setup(name="pyclj",
-      version="0.1.0",
+      version="0.1.1",
       author="Sun Ning",
       author_email="sunng@about.me",
       description="clojure literal reader and writer for python",

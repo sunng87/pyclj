@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2012 Sun Ning<classicning@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person
@@ -40,7 +41,7 @@
 __all__ = ["dump", "dumps", "load", "loads"]
 
 import os
-from cStringIO import StringIO
+from StringIO import StringIO
 
 def number(v):
     r = None
@@ -161,13 +162,14 @@ class CljDecoder(object):
             elif t == "string":
                 buf = []
                 cp = c = fd.read(1) ## to check escaping character \
-                buf.append(c)
+
                 while not(c == '"' and cp != '\\'):
+                    buf.append(c)
                     cp = c
                     c = fd.read(1)
-                    buf.append(c)
                 e = c
-                v = ''.join(buf[:-1]).decode("unicode-escape")
+                #v = u''.join(buf).decode('unicode-escape')
+                v = u''.join(buf).encode("utf-8").decode('string-escape').decode('utf-8')
             else:
                 r = False
                 e = c
@@ -203,7 +205,7 @@ class CljEncoder(object):
     def get_type(self,t):
         if t is None:
             return ("None", False)
-        elif isinstance(t, str):
+        elif isinstance(t, str) or isinstance(t, unicode):
             return ("string", False)
         elif isinstance(t, bool):
             return ("boolean", False)
