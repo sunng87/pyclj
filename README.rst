@@ -54,7 +54,7 @@ boolean boolean
 ======= =======
 
 License
-=======
+-------
 
 pyclj is distributed under MIT license.
 
