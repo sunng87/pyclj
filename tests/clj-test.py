@@ -13,6 +13,8 @@ class CljLoadTest(unittest.TestCase):
                      ":hello": "hello",
                      r'"string\"ing"': 'string"ing',
                      '"string\n"': 'string\n',
+                     '[:hello]':["hello"],
+                     '-10.4':-10.4,
                      u'"你"': u'你',
                      "[1 2]": [1,2],
                      "#{true \"hello\" 12}": set([True, "hello", 12]),
@@ -20,7 +22,8 @@ class CljLoadTest(unittest.TestCase):
                      "{:a 1 :b 2 :c 3 :d 4}": {"a":1, "b":2, "c":3,"d":4},
                      "[1     2 3,4]": [1,2,3,4],
                      "{:a [1 2 3] :b #{23.1 43.1 33.1}}": {"a":[1,2,3], "b":set([23.1,43.1,33.1])},
-                     "{:a 1 :b [32 32 43] :c 4}": {"a":1,"b":[32,32,43],"c":4}}
+                     "{:a 1 :b [32 32 43] :c 4}": {"a":1,"b":[32,32,43],"c":4},
+                     "\\你": "你"}
 
     def test_all_data(self):
         for k,v in self.data.items():

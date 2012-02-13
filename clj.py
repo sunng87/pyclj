@@ -133,8 +133,13 @@ class CljDecoder(object):
                     v = False
 
             elif t == "char":
-                v = fd.read(1)
-                e = fd.read(1)
+                buf = []
+                while c is not self.terminator and c is not "" and c not in self.stop_chars:
+                    c = fd.read(1)
+                    buf.append(c)
+                
+                e = c
+                v = ''.join(buf[:-1])
 
             elif t == "nil":
                 e = fd.read(3)[-1]
@@ -154,6 +159,7 @@ class CljDecoder(object):
                 while c is not self.terminator and c is not "" and c not in self.stop_chars:
                     c = fd.read(1)
                     buf.append(c)
+ 
                 e = c
                 v = ''.join(buf[:-1])
 
