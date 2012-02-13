@@ -44,12 +44,10 @@ import os
 from StringIO import StringIO
 
 def number(v):
-    r = None
-    try:
-        r = int(v)
-    except ValueError:
-        r = float(v)
-    return r
+    if '.' in v:
+        return float(v)
+    else:
+        return int(v)
 
 class CljDecoder(object):
     def __init__(self, fd):
@@ -69,7 +67,7 @@ class CljDecoder(object):
         * type name
         * a flag to indicate if it's a collection
         """
-        if c.isdigit():
+        if c.isdigit() or c =='-':
             return ("number", False)
         elif c == 't' or c == 'f': ## true/false
             return ("boolean", False)
