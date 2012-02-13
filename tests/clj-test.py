@@ -15,7 +15,7 @@ class CljLoadTest(unittest.TestCase):
                      '"string\n"': 'string\n',
                      '[:hello]':["hello"],
                      '-10.4':-10.4,
-                     u'"你"': u'你',
+                     '"你"': '你',
                      "[1 2]": [1,2],
                      "#{true \"hello\" 12}": set([True, "hello", 12]),
                      "(\\a \\b \\c \\d)": ["a","b","c","d"],

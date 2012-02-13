@@ -173,7 +173,7 @@ class CljDecoder(object):
                     c = fd.read(1)
                 e = c
                 #v = u''.join(buf).decode('unicode-escape')
-                v = u''.join(buf).encode("utf-8").decode('string-escape').decode('utf-8')
+                v = ''.join(buf).decode('string-escape')
             else:
                 r = False
                 e = c
