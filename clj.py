@@ -143,12 +143,12 @@ class CljDecoder(object):
                 v = None
 
             elif t == "number":
-                buf = [c]
+                buf = []
                 while c is not self.terminator and c is not "" and c not in self.stop_chars:
-                    c = fd.read(1)
                     buf.append(c)
+                    c = fd.read(1)
                 e = c
-                numstr = ''.join(buf[:-1])
+                numstr = ''.join(buf)
                 v = number(numstr)
 
             elif t == "keyword":
@@ -175,7 +175,8 @@ class CljDecoder(object):
                 e = c
 
             if e is self.terminator:
-                current_scope, self.terminator, self.container = self.value_stack.pop()
+                current_scope, _, self.container = self.value_stack.pop()
+
                 if r:
                     current_scope.append(v)
                     
@@ -190,6 +191,7 @@ class CljDecoder(object):
 
             if len(self.value_stack) > 0:
                 self.value_stack[-1][0].append(v)
+                self.terminator = self.value_stack[-1][1]
 
             return v
 
