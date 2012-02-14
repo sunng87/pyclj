@@ -48,6 +48,10 @@ class CljDumpTest(unittest.TestCase):
         for k,v in self.data.items():
             self.assertEqual(k, clj.dumps(v))
 
+    def test_misformed_data(self):
+        data = "[1 2 3"
+        self.assertRaises(ValueError, clj.loads, data)
+
 
 if __name__ == '__main__':
     unittest.main()            

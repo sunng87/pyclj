@@ -98,7 +98,11 @@ class CljDecoder(object):
         ## skip all stop chars if necessary 
         while c in self.stop_chars:
             c = fd.read(1)
-            
+
+        ## raise exception when unexpected EOF found
+        if c == '':
+            raise ValueError("Unexpected EOF")
+
         t, coll = self.__get_type_from_char(c)
         if coll:
             ## move cursor 
