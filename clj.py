@@ -41,7 +41,7 @@
 __all__ = ["dump", "dumps", "load", "loads"]
 
 import os
-from StringIO import StringIO
+from cStringIO import StringIO
 
 def number(v):
     if '.' in v:
