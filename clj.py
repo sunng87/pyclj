@@ -71,27 +71,27 @@ class CljDecoder(object):
         * a flag to indicate if it's a collection
         """
         if c.isdigit() or c =='-':
-            return ("number", False)
+            return ("number", False, None)
         elif c == 't' or c == 'f': ## true/false
-            return ("boolean", False)
+            return ("boolean", False, None)
         elif c == 'n': ## nil
-            return ("nil", False)
+            return ("nil", False, None)
         elif c == '\\' :
-            return ("char", False)
+            return ("char", False, None)
         elif c == ':':
-            return ("keyword", False)
+            return ("keyword", False, None)
         elif c == '"':
-            return ("string", False)
+            return ("string", False, None)
         elif c == '#':
-            return ("set", True)
+            return ("set", True, "}")
         elif c == '{':
-            return ("map", True)
+            return ("dict", True, "}")
         elif c == '(':
-            return ("list", True)
+            return ("list", True, ")")
         elif c == '[':
-            return ('vector', True)
+            return ('list', True, "]")
         else:
-            return (None, False)
+            return (None, False, None)
 
     def __read_token(self):
         fd = self.fd
@@ -106,25 +106,16 @@ class CljDecoder(object):
         if c == '':
             raise ValueError("Unexpected EOF")
 
-        t, coll = self.__get_type_from_char(c)
+        t, coll, term = self.__get_type_from_char(c)
         if coll:
             ## move cursor 
             if t == "set":
                 ## skip {
                 fd.read(1)
-                self.terminator = "}"
-                self.container = "set"
-            elif t == "list":
-                self.terminator = ")"
-                self.container = "list"
-            elif t == "vector":
-                self.terminator = "]"
-                self.container = "list"
-            elif t == "map":
-                self.terminator = "}"
-                self.container = "dict"
+
+            self.terminator = term
                 
-            self.value_stack.append(([], self.terminator, self.container))
+            self.value_stack.append(([], self.terminator, t))
             return None
         else:
             v = None ## token value
@@ -192,16 +183,16 @@ class CljDecoder(object):
                 e = c
 
             if e is self.terminator:
-                current_scope, _, self.container = self.value_stack.pop()
+                current_scope, _, container = self.value_stack.pop()
 
                 if r:
                     current_scope.append(v)
                     
-                if self.container == "set":
+                if container == "set":
                     v = set(current_scope)
-                elif self.container == "list":
+                elif container == "list":
                     v = current_scope
-                elif self.container == "dict":
+                elif container == "dict":
                     v = {}
                     for i in range(0, len(current_scope), 2):
                         v[current_scope[i]] = current_scope[i+1]
