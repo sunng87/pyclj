@@ -54,6 +54,8 @@ class CljDecoder(object):
         self.fd = fd
         self.value_stack = []
         self.stop_chars = [" ", ",", "\n", "\r"]
+        self.coll_open_chars = ["#", "[", "{"]
+        self.extra_num_chars = ["-", "+", ".", "e", "E"]
         self.terminator = None ## for collection type
 
     def decode(self):
@@ -151,12 +153,18 @@ class CljDecoder(object):
 
             elif t == "number":
                 buf = []
-                while c is not self.terminator and c is not "" and c not in self.stop_chars:
+                while c.isdigit() or (c in self.extra_num_chars):
                     buf.append(c)
                     c = fd.read(1)
                 e = c
                 numstr = ''.join(buf)
                 v = number(numstr)
+
+                ## special case for 
+                ## [23[12]]
+                ## this is a valid clojure form
+                if e in self.coll_open_chars:
+                    fd.seek(-1, os.SEEK_CUR)
 
             elif t == "keyword":
                 buf = []    ##skip the leading ":"
