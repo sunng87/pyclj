@@ -49,13 +49,14 @@ def number(v):
     else:
         return int(v)
 
+_STOP_CHARS = [" ", ",", "\n", "\r"]
+_COLL_OPEN_CHARS = ["#", "[", "{"]
+_EXTRA_NUM_CHARS = ["-", "+", ".", "e", "E"]
+
 class CljDecoder(object):
     def __init__(self, fd):
         self.fd = fd
         self.value_stack = []
-        self.stop_chars = [" ", ",", "\n", "\r"]
-        self.coll_open_chars = ["#", "[", "{"]
-        self.extra_num_chars = ["-", "+", ".", "e", "E"]
         self.terminator = None ## for collection type
 
     def decode(self):
@@ -98,7 +99,7 @@ class CljDecoder(object):
         c = fd.read(1)
 
         ## skip all stop chars if necessary 
-        while c in self.stop_chars:
+        while c in _STOP_CHARS:
             c = fd.read(1)
 
         ## raise exception when unexpected EOF found
@@ -140,7 +141,7 @@ class CljDecoder(object):
 
             elif t == "char":
                 buf = []
-                while c is not self.terminator and c is not "" and c not in self.stop_chars:
+                while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
                     c = fd.read(1)
                     buf.append(c)
                 
@@ -153,7 +154,7 @@ class CljDecoder(object):
 
             elif t == "number":
                 buf = []
-                while c.isdigit() or (c in self.extra_num_chars):
+                while c.isdigit() or (c in _EXTRA_NUM_CHARS):
                     buf.append(c)
                     c = fd.read(1)
                 e = c
@@ -163,12 +164,12 @@ class CljDecoder(object):
                 ## special case for 
                 ## [23[12]]
                 ## this is a valid clojure form
-                if e in self.coll_open_chars:
+                if e in _COLL_OPEN_CHARS:
                     fd.seek(-1, os.SEEK_CUR)
 
             elif t == "keyword":
                 buf = []    ##skip the leading ":"
-                while c is not self.terminator and c is not "" and c not in self.stop_chars:
+                while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
                     c = fd.read(1)
                     buf.append(c)
  
