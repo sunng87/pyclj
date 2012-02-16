@@ -49,8 +49,9 @@ def number(v):
     else:
         return int(v)
 
-_STOP_CHARS = [" ", ",", "\n", "\r"]
+_STOP_CHARS = [" ", ",", "\n", "\r", "\t"]
 _COLL_OPEN_CHARS = ["#", "[", "{"]
+_COLL_CLOSE_CHARS = ["]", "}"]
 _EXTRA_NUM_CHARS = ["-", "+", ".", "e", "E"]
 
 class CljDecoder(object):
@@ -124,10 +125,16 @@ class CljDecoder(object):
 
             if t == "boolean":
                 if c == 't':
-                    e = fd.read(4)[-1]
+                    chars = fd.read(4)
+                    if chars[:3] != 'rue':
+                        raise ValueError('Expect true, got t'+chars[:3])
+                    e = chars[-1]
                     v = True
                 else:
-                    e = fd.read(5)[-1]
+                    chars = fd.read(5)
+                    if chars[:4] != 'alse':
+                        raise ValueError('Expect false, got f'+chars[:4])
+                    e = chars[-1]
                     v = False
 
             elif t == "char":
@@ -140,7 +147,10 @@ class CljDecoder(object):
                 v = ''.join(buf[:-1])
 
             elif t == "nil":
-                e = fd.read(3)[-1]
+                chars = fd.read(3)
+                if chars[:2] != 'il':
+                    raise ValueError('Expect nil, got n'+chars[:2])
+                e = chars[-1]
                 v = None
 
             elif t == "number":
@@ -179,6 +189,8 @@ class CljDecoder(object):
                 #v = u''.join(buf).decode('unicode-escape')
                 v = ''.join(buf).decode('string-escape')
             else:
+                if c not in _COLL_CLOSE_CHARS:
+                    raise ValueError('Unexpected char: '+c)
                 r = False
                 e = c
 
@@ -215,7 +227,7 @@ class CljEncoder(object):
     def get_type(self,t):
         if t is None:
             return ("None", False)
-        elif isinstance(t, str) or isinstance(t, unicode):
+        elif isinstance(t, str):
             return ("string", False)
         elif isinstance(t, bool):
             return ("boolean", False)
@@ -262,7 +274,7 @@ class CljEncoder(object):
             if t == "number":
                 fd.write(str(d))
             elif t == "string":
-                s = d.encode("unicode-escape").replace('"', '\\"')
+                s = d.encode("string-escape").replace('"', '\\"')
                 fd.write('"'+s+'"')
             elif t == "boolean":
                 if d:
