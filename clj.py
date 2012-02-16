@@ -50,8 +50,8 @@ def number(v):
         return int(v)
 
 _STOP_CHARS = [" ", ",", "\n", "\r", "\t"]
-_COLL_OPEN_CHARS = ["#", "[", "{"]
-_COLL_CLOSE_CHARS = ["]", "}"]
+_COLL_OPEN_CHARS = ["#", "[", "{", "("]
+_COLL_CLOSE_CHARS = ["]", "}", ")"]
 _EXTRA_NUM_CHARS = ["-", "+", ".", "e", "E"]
 
 class CljDecoder(object):
@@ -232,7 +232,7 @@ class CljEncoder(object):
             return ("string", False)
         elif isinstance(t, bool):
             return ("boolean", False)
-        elif isinstance(t, float) or isinstance(t, int):
+        elif isinstance(t, (int,float,long)):
             return ("number", False)
         elif isinstance(t, dict):
             return ("dict", True)
