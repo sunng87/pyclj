@@ -54,7 +54,11 @@ class CljDumpTest(unittest.TestCase):
         for d in data:
             self.assertRaises(ValueError, clj.loads, d)
 
-
+    def test_circular_ref(self):
+        s = [1,2,3]
+        d = {"a": [], "b": s}
+        s.append(d)
+        self.assertRaises(ValueError, clj.dumps, d)
 
 if __name__ == '__main__':
     unittest.main()            

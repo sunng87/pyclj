@@ -220,6 +220,7 @@ class CljEncoder(object):
     def __init__(self, data, fd):
         self.data = data
         self.fd = fd
+        self.circular = {}
 
     def encode(self):
         self.__do_encode(self.data)
@@ -247,6 +248,12 @@ class CljEncoder(object):
         t,coll = self.get_type(d)
 
         if coll:
+            refid = id(d)
+            if refid in self.circular:
+                raise ValueError('Circular reference detected')
+            else:
+                self.circular[refid] = True
+            
             if t == "dict":
                 fd.write("{")
                 for k,v in d.items():
