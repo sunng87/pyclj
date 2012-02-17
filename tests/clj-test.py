@@ -30,6 +30,14 @@ class CljLoadTest(unittest.TestCase):
         for k,v in self.data.items():
             self.assertEqual(clj.loads(k), v)
 
+            
+    def test_misformed_data(self):
+        data = ["[1 2 3", "til", "falSe", "nik", "@EE", "[@nil tee]"]
+        for d in data:
+            self.assertRaises(ValueError, clj.loads, d)
+
+
+
 class CljDumpTest(unittest.TestCase):
     def setUp(self):
         self.data = {'"helloworld"': "helloworld",
@@ -48,11 +56,6 @@ class CljDumpTest(unittest.TestCase):
     def test_all_data(self):
         for k,v in self.data.items():
             self.assertEqual(k, clj.dumps(v))
-
-    def test_misformed_data(self):
-        data = ["[1 2 3", "til", "falSe", "nik", "@EE", "[@nil tee]"]
-        for d in data:
-            self.assertRaises(ValueError, clj.loads, d)
 
     def test_circular_ref(self):
         s = [1,2,3]
