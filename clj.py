@@ -40,8 +40,10 @@
 
 __all__ = ["dump", "dumps", "load", "loads"]
 
-import os
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 def number(v):
     if '.' in v:
@@ -139,7 +141,7 @@ class CljDecoder(object):
 
             elif t == "char":
                 buf = []
-                while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
+                while c != self.terminator and c != "" and c not in _STOP_CHARS:
                     c = fd.read(1)
                     buf.append(c)
                 
@@ -166,11 +168,11 @@ class CljDecoder(object):
                 ## [23[12]]
                 ## this is a valid clojure form
                 if e in _COLL_OPEN_CHARS:
-                    fd.seek(-1, os.SEEK_CUR)
+                    fd.seek(fd.tell()-1, 0) ## equal to seek(-1, SEEK_CUR), this is a workaround because StringIO in python3 doesn't cur-relative seeks
 
             elif t == "keyword":
                 buf = []    ##skip the leading ":"
-                while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
+                while c != self.terminator and c != "" and c not in _STOP_CHARS:
                     c = fd.read(1)
                     buf.append(c)
  
@@ -187,14 +189,14 @@ class CljDecoder(object):
                     c = fd.read(1)
                 e = c
                 #v = u''.join(buf).decode('unicode-escape')
-                v = ''.join(buf).decode('string-escape')
+                v = ''.join(buf).encode('utf_8').decode('unicode_escape') ##py3k bug?
             else:
                 if c not in _COLL_CLOSE_CHARS:
                     raise ValueError('Unexpected char: '+c)
                 r = False
                 e = c
 
-            if e is self.terminator:
+            if e == self.terminator:
                 current_scope, _, container = self.value_stack.pop()
 
                 if r:
@@ -232,7 +234,7 @@ class CljEncoder(object):
             return ("string", False)
         elif isinstance(t, bool):
             return ("boolean", False)
-        elif isinstance(t, (int,float,long)):
+        elif isinstance(t, (int,float)):
             return ("number", False)
         elif isinstance(t, dict):
             return ("dict", True)
@@ -261,27 +263,27 @@ class CljEncoder(object):
                     fd.write(" ")
                     self.__do_encode(v)
                     fd.write(" ")
-                fd.seek(-1, os.SEEK_CUR)
+                fd.seek(fd.tell()-1, 0)
                 fd.write("}")
             elif t == "list":
                 fd.write("[")
                 for v in d:
                     self.__do_encode(v)
                     fd.write(" ")
-                fd.seek(-1, os.SEEK_CUR)
+                fd.seek(fd.tell()-1, 0)
                 fd.write("]")
             elif t == "set":
                 fd.write("#{")
                 for v in d:
                     self.__do_encode(v)
                     fd.write(" ")
-                fd.seek(-1, os.SEEK_CUR)
+                fd.seek(fd.tell()-1, 0)
                 fd.write("}")
         else:
             if t == "number":
                 fd.write(str(d))
             elif t == "string":
-                s = d.encode("string-escape").replace('"', '\\"')
+                s = d.encode("unicode_escape").decode('utf-8').replace('"', '\\"')
                 fd.write('"'+s+'"')
             elif t == "boolean":
                 if d:
