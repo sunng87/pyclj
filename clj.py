@@ -97,13 +97,14 @@ class CljDecoder(object):
             return (None, False, None)
 
     def __read_fd(self, size):
-        self.cur_pos = self.cur_pos + size
         if size == 1:
             c = self.fd.read(size)
             if  c == '\n':
+                self.cur_pos = 0
                 self.cur_line = self.cur_line + 1
             return c
         else:
+            self.cur_pos = self.cur_pos + size
             cs = self.fd.read(size)
             return cs
 
