@@ -57,6 +57,8 @@ _EXTRA_NUM_CHARS = ["-", "+", ".", "e", "E"]
 class CljDecoder(object):
     def __init__(self, fd):
         self.fd = fd
+        self.cur_line = 1
+        self.cur_pos = 1
         self.value_stack = []
         self.terminator = None ## for collection type
 
@@ -94,14 +96,22 @@ class CljDecoder(object):
         else:
             return (None, False, None)
 
+    def __read_fd(self, size):
+        self.cur_pos = self.cur_pos + size
+        if size == 1:
+            c = self.fd.read(size)
+            if  c == '\n':
+                self.cur_line = self.cur_line + 1
+            return c
+        else:
+            return self.fd.read(size)
+
     def __read_token(self):
-        fd = self.fd
-        
-        c = fd.read(1)
+        c = self.__read_fd(1)
 
         ## skip all stop chars if necessary 
         while c in _STOP_CHARS:
-            c = fd.read(1)
+            c = self.__read_fd(1)
 
         ## raise exception when unexpected EOF found
         if c == '':
@@ -112,7 +122,7 @@ class CljDecoder(object):
             ## move cursor 
             if t == "set":
                 ## skip {
-                fd.read(1)
+                self.__read_fd(1)
 
             self.terminator = term
                 
@@ -125,31 +135,31 @@ class CljDecoder(object):
 
             if t == "boolean":
                 if c == 't':
-                    chars = fd.read(4)
+                    chars = self.__read_fd(4)
                     if chars[:3] != 'rue':
-                        raise ValueError('Expect true, got t'+chars[:3])
+                        raise ValueError('Expect true, got t%s at line %d, col %d' % (chars[:3], self.cur_line, self.cur_pos))
                     e = chars[-1]
                     v = True
                 else:
-                    chars = fd.read(5)
+                    chars = self.__read_fd(5)
                     if chars[:4] != 'alse':
-                        raise ValueError('Expect false, got f'+chars[:4])
+                        raise ValueError('Expect true, got t%s at line %d, col %d' % (chars[:3], self.cur_line, self.cur_pos))
                     e = chars[-1]
                     v = False
 
             elif t == "char":
                 buf = []
                 while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
-                    c = fd.read(1)
+                    c = self.__read_fd(1)
                     buf.append(c)
                 
                 e = c
                 v = ''.join(buf[:-1])
 
             elif t == "nil":
-                chars = fd.read(3)
+                chars = self.__read_fd(3)
                 if chars[:2] != 'il':
-                    raise ValueError('Expect nil, got n'+chars[:2])
+                    raise ValueError('Expect nil, got n%s at line %d, col %d' % (chars[:2], self.cur_line, self.cur_pos))
                 e = chars[-1]
                 v = None
 
@@ -157,7 +167,7 @@ class CljDecoder(object):
                 buf = []
                 while c.isdigit() or (c in _EXTRA_NUM_CHARS):
                     buf.append(c)
-                    c = fd.read(1)
+                    c = self.__read_fd(1)
                 e = c
                 numstr = ''.join(buf)
                 v = number(numstr)
@@ -166,12 +176,12 @@ class CljDecoder(object):
                 ## [23[12]]
                 ## this is a valid clojure form
                 if e in _COLL_OPEN_CHARS:
-                    fd.seek(-1, os.SEEK_CUR)
+                    self.fd.seek(-1, os.SEEK_CUR)
 
             elif t == "keyword":
                 buf = []    ##skip the leading ":"
                 while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
-                    c = fd.read(1)
+                    c = self.__read_fd(1)
                     buf.append(c)
  
                 e = c
@@ -179,18 +189,18 @@ class CljDecoder(object):
 
             elif t == "string":
                 buf = []
-                cp = c = fd.read(1) ## to check escaping character \
+                cp = c = self.__read_fd(1) ## to check escaping character \
 
                 while not(c == '"' and cp != '\\'):
                     buf.append(c)
                     cp = c
-                    c = fd.read(1)
+                    c = self.__read_fd(1)
                 e = c
                 #v = u''.join(buf).decode('unicode-escape')
                 v = ''.join(buf).decode('string-escape')
             else:
                 if c not in _COLL_CLOSE_CHARS:
-                    raise ValueError('Unexpected char: '+c)
+                    raise ValueError('Unexpected char: "%s" at line %d, col %d' % (c, self.cur_line, self.cur_pos))
                 r = False
                 e = c
 
