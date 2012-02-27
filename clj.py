@@ -104,7 +104,8 @@ class CljDecoder(object):
                 self.cur_line = self.cur_line + 1
             return c
         else:
-            return self.fd.read(size)
+            cs = self.fd.read(size)
+            return cs
 
     def __read_token(self):
         c = self.__read_fd(1)
@@ -204,7 +205,7 @@ class CljDecoder(object):
                 r = False
                 e = c
 
-            if e is self.terminator:
+            if e == self.terminator:
                 current_scope, _, container = self.value_stack.pop()
 
                 if r:
@@ -218,8 +219,9 @@ class CljDecoder(object):
                     v = {}
                     for i in range(0, len(current_scope), 2):
                         v[current_scope[i]] = current_scope[i+1]
+                r = True
 
-            if len(self.value_stack) > 0:
+            if r and len(self.value_stack) > 0:
                 self.value_stack[-1][0].append(v)
                 self.terminator = self.value_stack[-1][1]
 
