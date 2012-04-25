@@ -269,26 +269,29 @@ class CljEncoder(object):
             
             if t == "dict":
                 fd.write("{")
-                for k,v in d.items():
-                    self.__do_encode(k)
-                    fd.write(" ")
-                    self.__do_encode(v)
-                    fd.write(" ")
-                fd.seek(-1, os.SEEK_CUR)
+                if len(d) > 0:
+                    for k,v in d.items():
+                        self.__do_encode(k)
+                        fd.write(" ")
+                        self.__do_encode(v)
+                        fd.write(" ")
+                    fd.seek(-1, os.SEEK_CUR)
                 fd.write("}")
             elif t == "list":
                 fd.write("[")
-                for v in d:
-                    self.__do_encode(v)
-                    fd.write(" ")
-                fd.seek(-1, os.SEEK_CUR)
+                if len(d) > 0:
+                    for v in d:
+                        self.__do_encode(v)
+                        fd.write(" ")
+                    fd.seek(-1, os.SEEK_CUR)
                 fd.write("]")
             elif t == "set":
                 fd.write("#{")
-                for v in d:
-                    self.__do_encode(v)
-                    fd.write(" ")
-                fd.seek(-1, os.SEEK_CUR)
+                if len(d) > 0:
+                    for v in d:
+                        self.__do_encode(v)
+                        fd.write(" ")
+                    fd.seek(-1, os.SEEK_CUR)
                 fd.write("}")
         else:
             if t == "number":
