@@ -249,7 +249,7 @@ class CljEncoder(object):
             return ("number", False)
         elif isinstance(t, dict):
             return ("dict", True)
-        elif isinstance(t, list):
+        elif isinstance(t, (list,tuple)):
             return ("list", True)
         elif isinstance(t, set):
             return ("set", True)

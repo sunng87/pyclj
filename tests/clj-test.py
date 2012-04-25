@@ -48,6 +48,7 @@ class CljDumpTest(unittest.TestCase):
                      'false': False,
                      'nil': None,
                      "[1 2 3]":[1,2,3],
+                     "[1 2 3 4]": (1,2,3,4),
                      '{"a" 1 "b" 2}':{"a":1, "b":2},
                      '#{1}': set([1]),
                      '["h" nil [1 2 3] {"w" true}]':["h",None,[1,2,3],{"w":True}]
