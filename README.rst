@@ -1,7 +1,8 @@
 pyclj
 =====
 
-A python reader/writer for clojure data literals.
+A python reader/writer for clojure data literals. 
+On clojure's extensible data notations, checkout Rich Hickey's edn spec: https://github.com/richhickey/edn
 
 Install
 -------
