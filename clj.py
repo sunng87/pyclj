@@ -45,6 +45,8 @@ try:
 except ImportError:
     from io import StringIO
 
+import codecs
+
 def number(v):
     if '.' in v:
         return float(v)
@@ -188,8 +190,8 @@ class CljDecoder(object):
                     cp = c
                     c = fd.read(1)
                 e = c
-                #v = u''.join(buf).decode('unicode-escape')
-                v = ''.join(buf).encode('utf_8').decode('unicode_escape') ##py3k bug?
+                v = codecs.getdecoder('unicode_escape')(u''.join(buf))
+                
             else:
                 if c not in _COLL_CLOSE_CHARS:
                     raise ValueError('Unexpected char: '+c)
