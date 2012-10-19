@@ -36,12 +36,18 @@
 # clojure boolean true => python boolean true
 # clojure nil => python None 
 #
+# clojure datetime => python datetime
+#
 
 
 __all__ = ["dump", "dumps", "load", "loads"]
 
 import os
 from cStringIO import StringIO
+
+from datetime import datetime
+import pyrfc3339
+import pytz
 
 def number(v):
     if '.' in v:
@@ -67,6 +73,14 @@ class CljDecoder(object):
             v = self.__read_token()
             if len(self.value_stack) == 0:
                 return v
+
+    def __seek_back(self, size):
+        self.fd.seek(self.fd.tell()-size, 0)
+
+    def __read_and_back(self, size):
+        s = self.fd.read(size)
+        self.__seek_back(size)
+        return s
         
     def __get_type_from_char(self, c):
         """return a tuple of type information
@@ -86,15 +100,18 @@ class CljDecoder(object):
         elif c == '"':
             return ("string", False, None)
         elif c == '#':
-            return ("set", True, "}")
+            if self.__read_and_back(1) == '{':
+                return ("set", True, "}")
+            if self.__read_and_back(4) == 'inst':
+                return ("datetime", False, None)
         elif c == '{':
             return ("dict", True, "}")
         elif c == '(':
             return ("list", True, ")")
         elif c == '[':
             return ('list', True, "]")
-        else:
-            return (None, False, None)
+        
+        return (None, False, None)
 
     def __read_fd(self, size):
         if size == 1:
@@ -178,7 +195,7 @@ class CljDecoder(object):
                 ## [23[12]]
                 ## this is a valid clojure form
                 if e in _COLL_OPEN_CHARS:
-                    self.fd.seek(-1, os.SEEK_CUR)
+                    self.__seek_back(1)
 
             elif t == "keyword":
                 buf = []    ##skip the leading ":"
@@ -200,6 +217,18 @@ class CljDecoder(object):
                 e = c
                 #v = u''.join(buf).decode('unicode-escape')
                 v = ''.join(buf).decode('string-escape')
+                
+            elif t == "datetime":
+                ## skip "inst"
+                self.__read_fd(4)
+
+                ## read next value as string
+                s = self.__read_token()
+                if not isinstance(s, str):
+                    raise ValueError('Str expected, but got %s' % str(s))
+                e = '"'
+                v = pyrfc3339.parse(s)
+
             else:
                 if c not in _COLL_CLOSE_CHARS:
                     raise ValueError('Unexpected char: "%s" at line %d, col %d' % (c, self.cur_line, self.cur_pos))
@@ -253,6 +282,8 @@ class CljEncoder(object):
             return ("list", True)
         elif isinstance(t, set):
             return ("set", True)
+        elif isinstance(t, datetime):
+            return ("datetime", False)
         else:
             return ("unknown", False)
 
@@ -306,6 +337,13 @@ class CljEncoder(object):
                     fd.write('false')
             elif t == 'None':
                 fd.write('nil')
+            elif t == 'datetime':
+                s = d.strftime("%Y-%m-%dT%H:%M:%S%z")
+                if not d.tzinfo:
+                    ## replace naive datetime
+                    d = d.replace(tzinfo=pytz.utc)
+                s = pyrfc3339.generate(d)
+                fd.write("#inst \"%s\"" % s)
             else:
                 fd.write('"'+str(d)+'"')
     

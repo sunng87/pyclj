@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import unittest
 import clj
+import pytz
+from datetime import datetime
 
 class CljLoadTest(unittest.TestCase):
     def setUp(self):
@@ -24,7 +26,8 @@ class CljLoadTest(unittest.TestCase):
                      "{:a [1 2 3] :b #{23.1 43.1 33.1}}": {"a":[1,2,3], "b":set([23.1,43.1,33.1])},
                      "{:a 1 :b [32 32 43] :c 4}": {"a":1,"b":[32,32,43],"c":4},
                      "\\你": "你",
-                     "[23[34][32][4]]": [23,[34],[32],[4]]}
+                     "[23[34][32][4]]": [23,[34],[32],[4]],
+                     "#inst \"2012-10-19T22:19:03.000-00:00\"": datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc)}
 
     def test_all_data(self):
         for k,v in self.data.items():
@@ -53,7 +56,8 @@ class CljDumpTest(unittest.TestCase):
                      "{}": {},
                      '{"a" 1 "b" 2}':{"a":1, "b":2},
                      '#{1}': set([1]),
-                     '["h" nil [1 2 3] {"w" true}]':["h",None,[1,2,3],{"w":True}]
+                     '["h" nil [1 2 3] {"w" true}]':["h",None,[1,2,3],{"w":True}],
+                     '#inst "2012-10-19T14:16:54Z"':datetime(2012,10,19,14,16,54,907)
                      }
         
     def test_all_data(self):
