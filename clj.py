@@ -37,6 +37,7 @@
 # clojure nil => python None 
 #
 # clojure datetime => python datetime
+# clojure uuid => python uuid
 #
 
 
@@ -45,6 +46,7 @@ __all__ = ["dump", "dumps", "load", "loads"]
 import os
 from cStringIO import StringIO
 
+import uuid
 from datetime import datetime
 import pyrfc3339
 import pytz
@@ -104,6 +106,8 @@ class CljDecoder(object):
                 return ("set", True, "}")
             if self.__read_and_back(4) == 'inst':
                 return ("datetime", False, None)
+            if self.__read_and_back(4) == 'uuid':
+                return ("uuid", False, None)
         elif c == '{':
             return ("dict", True, "}")
         elif c == '(':
@@ -229,6 +233,17 @@ class CljDecoder(object):
                 e = '"'
                 v = pyrfc3339.parse(s)
 
+            elif t == "uuid":
+                ## skip "uuid"
+                self.__read_fd(4)
+                
+                ## read next value as string
+                s = self.__read_token()
+                if not isinstance(s, str):
+                    raise ValueError('Str expected, but got %s' % str(s))
+                e = '"'
+                v = uuid.UUID(s)
+
             else:
                 if c not in _COLL_CLOSE_CHARS:
                     raise ValueError('Unexpected char: "%s" at line %d, col %d' % (c, self.cur_line, self.cur_pos))
@@ -284,6 +299,8 @@ class CljEncoder(object):
             return ("set", True)
         elif isinstance(t, datetime):
             return ("datetime", False)
+        elif isinstance(t, uuid.UUID):
+            return ("uuid", False)
         else:
             return ("unknown", False)
 
@@ -338,12 +355,14 @@ class CljEncoder(object):
             elif t == 'None':
                 fd.write('nil')
             elif t == 'datetime':
-                s = d.strftime("%Y-%m-%dT%H:%M:%S%z")
                 if not d.tzinfo:
                     ## replace naive datetime
                     d = d.replace(tzinfo=pytz.utc)
                 s = pyrfc3339.generate(d)
                 fd.write("#inst \"%s\"" % s)
+            elif t == 'uuid':
+                s = str(d)
+                fd.write("#uuid \"%s\"" % s)
             else:
                 fd.write('"'+str(d)+'"')
     

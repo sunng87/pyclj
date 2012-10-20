@@ -3,6 +3,7 @@ import unittest
 import clj
 import pytz
 from datetime import datetime
+import uuid
 
 class CljLoadTest(unittest.TestCase):
     def setUp(self):
@@ -27,7 +28,8 @@ class CljLoadTest(unittest.TestCase):
                      "{:a 1 :b [32 32 43] :c 4}": {"a":1,"b":[32,32,43],"c":4},
                      "\\你": "你",
                      "[23[34][32][4]]": [23,[34],[32],[4]],
-                     "#inst \"2012-10-19T22:19:03.000-00:00\"": datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc)}
+                     "#inst \"2012-10-19T22:19:03.000-00:00\"": datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc),
+                     '#uuid "6eabd442-6958-484b-825d-aa79c0ad4967"': uuid.UUID("6eabd442-6958-484b-825d-aa79c0ad4967")}
 
     def test_all_data(self):
         for k,v in self.data.items():
@@ -57,7 +59,8 @@ class CljDumpTest(unittest.TestCase):
                      '{"a" 1 "b" 2}':{"a":1, "b":2},
                      '#{1}': set([1]),
                      '["h" nil [1 2 3] {"w" true}]':["h",None,[1,2,3],{"w":True}],
-                     '#inst "2012-10-19T14:16:54Z"':datetime(2012,10,19,14,16,54,907)
+                     '#inst "2012-10-19T14:16:54Z"':datetime(2012,10,19,14,16,54,907),
+                     '#uuid "6eabd442-6958-484b-825d-aa79c0ad4967"': uuid.UUID("6eabd442-6958-484b-825d-aa79c0ad4967")
                      }
         
     def test_all_data(self):
