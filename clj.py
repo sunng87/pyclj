@@ -232,7 +232,7 @@ class CljDecoder(object):
                     raise ValueError('Str expected, but got %s' % str(s))
 
                 ## remove read string from the value_stack
-                if(self.value_stack) > 0:
+                if len(self.value_stack) > 0:
                     self.value_stack[-1][0].pop()
                 e = '"'
                 v = pyrfc3339.parse(s)
