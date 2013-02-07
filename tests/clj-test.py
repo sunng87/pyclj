@@ -29,7 +29,10 @@ class CljLoadTest(unittest.TestCase):
                      "\\你": "你",
                      "[23[34][32][4]]": [23,[34],[32],[4]],
                      "#inst \"2012-10-19T22:19:03.000-00:00\"": datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc),
-                     '#uuid "6eabd442-6958-484b-825d-aa79c0ad4967"': uuid.UUID("6eabd442-6958-484b-825d-aa79c0ad4967")}
+                     '#uuid "6eabd442-6958-484b-825d-aa79c0ad4967"': uuid.UUID("6eabd442-6958-484b-825d-aa79c0ad4967"),
+                     '{:a #inst "2012-10-19T22:19:03.000-00:00"}': {"a":datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc)},
+                     '[#inst "2012-10-19T22:19:03.000-00:00"]': [datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc)]
+                     }
 
     def test_all_data(self):
         for k,v in self.data.items():

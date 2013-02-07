@@ -230,6 +230,10 @@ class CljDecoder(object):
                 s = self.__read_token()
                 if not isinstance(s, str):
                     raise ValueError('Str expected, but got %s' % str(s))
+
+                ## remove read string from the value_stack
+                if len(self.value_stack) > 0:
+                    self.value_stack[-1][0].pop()
                 e = '"'
                 v = pyrfc3339.parse(s)
 
@@ -241,6 +245,10 @@ class CljDecoder(object):
                 s = self.__read_token()
                 if not isinstance(s, str):
                     raise ValueError('Str expected, but got %s' % str(s))
+
+                ## remove read string from the value_stack
+                if len(self.value_stack) > 0:
+                    self.value_stack[-1][0].pop()
                 e = '"'
                 v = uuid.UUID(s)
 
