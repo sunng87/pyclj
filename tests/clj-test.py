@@ -2,6 +2,7 @@
 import unittest
 import clj
 import pytz
+import decimal
 from datetime import datetime
 import uuid
 
@@ -9,6 +10,7 @@ class CljLoadTest(unittest.TestCase):
     def setUp(self):
         self.data = {"\"helloworld\"": "helloworld",
                      "23": 23,
+                     '23.45M': decimal.Decimal('23.45'),
                      "23.11": 23.11,
                      "true": True,
                      "false": False,
@@ -38,7 +40,7 @@ class CljLoadTest(unittest.TestCase):
         for k,v in self.data.items():
             self.assertEqual(clj.loads(k), v)
 
-            
+
     def test_misformed_data(self):
         data = ["[1 2 3", "til", "falSe", "nik", "@EE", "[@nil tee]"]
         for d in data:
@@ -51,6 +53,7 @@ class CljDumpTest(unittest.TestCase):
         self.data = {'"helloworld"': "helloworld",
                      '"hello\\"world"': "hello\"world",
                      '12': 12,
+                     '23.45M': decimal.Decimal('23.45'),
                      '12.334': 12.334,
                      'true': True,
                      'false': False,
@@ -65,7 +68,7 @@ class CljDumpTest(unittest.TestCase):
                      '#inst "2012-10-19T14:16:54Z"':datetime(2012,10,19,14,16,54,907),
                      '#uuid "6eabd442-6958-484b-825d-aa79c0ad4967"': uuid.UUID("6eabd442-6958-484b-825d-aa79c0ad4967")
                      }
-        
+
     def test_all_data(self):
         for k,v in self.data.items():
             self.assertEqual(k, clj.dumps(v))
@@ -77,6 +80,4 @@ class CljDumpTest(unittest.TestCase):
         self.assertRaises(ValueError, clj.dumps, d)
 
 if __name__ == '__main__':
-    unittest.main()            
-
-
+    unittest.main()
