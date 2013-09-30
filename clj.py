@@ -33,8 +33,9 @@
 # clojure keyword :a => python unicode "a"
 # clojure integer 123 => python integer 123
 # clojure float 12.3 => python float 12.3
+# clojure BigDecimal 12.34M => python decimal.Decimal
 # clojure boolean true => python boolean true
-# clojure nil => python None 
+# clojure nil => python None
 #
 # clojure datetime => python datetime
 # clojure uuid => python uuid
@@ -46,13 +47,16 @@ __all__ = ["dump", "dumps", "load", "loads"]
 import os
 from cStringIO import StringIO
 
+import decimal
 import uuid
 from datetime import datetime
 import pyrfc3339
 import pytz
 
 def number(v):
-    if '.' in v:
+    if v.endswith('M'):
+        return decimal.Decimal(v[:-1])
+    elif '.' in v:
         return float(v)
     else:
         return int(v)
@@ -60,7 +64,7 @@ def number(v):
 _STOP_CHARS = [" ", ",", "\n", "\r", "\t"]
 _COLL_OPEN_CHARS = ["#", "[", "{", "("]
 _COLL_CLOSE_CHARS = ["]", "}", ")"]
-_EXTRA_NUM_CHARS = ["-", "+", ".", "e", "E"]
+_EXTRA_NUM_CHARS = ["-", "+", ".", "e", "E", "M"]
 
 class CljDecoder(object):
     def __init__(self, fd):
@@ -83,7 +87,7 @@ class CljDecoder(object):
         s = self.fd.read(size)
         self.__seek_back(size)
         return s
-        
+
     def __get_type_from_char(self, c):
         """return a tuple of type information
         * type name
@@ -114,7 +118,7 @@ class CljDecoder(object):
             return ("list", True, ")")
         elif c == '[':
             return ('list', True, "]")
-        
+
         return (None, False, None)
 
     def __read_fd(self, size):
@@ -132,7 +136,7 @@ class CljDecoder(object):
     def __read_token(self):
         c = self.__read_fd(1)
 
-        ## skip all stop chars if necessary 
+        ## skip all stop chars if necessary
         while c in _STOP_CHARS:
             c = self.__read_fd(1)
 
@@ -142,13 +146,13 @@ class CljDecoder(object):
 
         t, coll, term = self.__get_type_from_char(c)
         if coll:
-            ## move cursor 
+            ## move cursor
             if t == "set":
                 ## skip {
                 self.__read_fd(1)
 
             self.terminator = term
-                
+
             self.value_stack.append(([], self.terminator, t))
             return None
         else:
@@ -175,7 +179,7 @@ class CljDecoder(object):
                 while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
                     c = self.__read_fd(1)
                     buf.append(c)
-                
+
                 e = c
                 v = ''.join(buf[:-1])
 
@@ -195,7 +199,7 @@ class CljDecoder(object):
                 numstr = ''.join(buf)
                 v = number(numstr)
 
-                ## special case for 
+                ## special case for
                 ## [23[12]]
                 ## this is a valid clojure form
                 if e in _COLL_OPEN_CHARS:
@@ -206,7 +210,7 @@ class CljDecoder(object):
                 while c is not self.terminator and c is not "" and c not in _STOP_CHARS:
                     c = self.__read_fd(1)
                     buf.append(c)
- 
+
                 e = c
                 v = ''.join(buf[:-1])
 
@@ -221,7 +225,7 @@ class CljDecoder(object):
                 e = c
                 #v = u''.join(buf).decode('unicode-escape')
                 v = ''.join(buf).decode('string-escape')
-                
+
             elif t == "datetime":
                 ## skip "inst"
                 self.__read_fd(4)
@@ -240,7 +244,7 @@ class CljDecoder(object):
             elif t == "uuid":
                 ## skip "uuid"
                 self.__read_fd(4)
-                
+
                 ## read next value as string
                 s = self.__read_token()
                 if not isinstance(s, str):
@@ -263,7 +267,7 @@ class CljDecoder(object):
 
                 if r:
                     current_scope.append(v)
-                    
+
                 if container == "set":
                     v = set(current_scope)
                 elif container == "list":
@@ -299,6 +303,8 @@ class CljEncoder(object):
             return ("boolean", False)
         elif isinstance(t, (int,float,long)):
             return ("number", False)
+        elif isinstance(t, decimal.Decimal):
+            return ("decimal", False)
         elif isinstance(t, dict):
             return ("dict", True)
         elif isinstance(t, (list,tuple)):
@@ -322,7 +328,7 @@ class CljEncoder(object):
                 raise ValueError('Circular reference detected')
             else:
                 self.circular[refid] = True
-            
+
             if t == "dict":
                 fd.write("{")
                 if len(d) > 0:
@@ -352,6 +358,8 @@ class CljEncoder(object):
         else:
             if t == "number":
                 fd.write(str(d))
+            elif t == "decimal":
+                fd.write(str(d) + 'M')
             elif t == "string":
                 s = d.encode("string-escape").replace('"', '\\"')
                 fd.write('"'+s+'"')
@@ -373,7 +381,7 @@ class CljEncoder(object):
                 fd.write("#uuid \"%s\"" % s)
             else:
                 fd.write('"'+str(d)+'"')
-    
+
 def dump(obj, fp):
     return CljEncoder(obj, fp).encode()
 
@@ -393,4 +401,3 @@ def loads(s):
     result = load(buf)
     buf.close()
     return result
-
