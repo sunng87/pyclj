@@ -269,7 +269,10 @@ class CljDecoder(object):
                     current_scope.append(v)
 
                 if container == "set":
-                    v = set(current_scope)
+                    try:
+                        v = set(current_scope)
+                    except TypeError:
+                        v = tuple(current_scope)
                 elif container == "list":
                     v = current_scope
                 elif container == "dict":

@@ -34,6 +34,7 @@ class CljLoadTest(unittest.TestCase):
                      '#uuid "6eabd442-6958-484b-825d-aa79c0ad4967"': uuid.UUID("6eabd442-6958-484b-825d-aa79c0ad4967"),
                      '{:a #inst "2012-10-19T22:19:03.000-00:00"}': {"a":datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc)},
                      '[#inst "2012-10-19T22:19:03.000-00:00"]': [datetime(2012, 10, 19, 22, 19, 3, tzinfo=pytz.utc)]
+                     '{:likes #{{:db/id 2} {:db/id 1}}}': {'likes': tuple([{'db/id': 2}, {'db/id': 1}])}
                      }
 
     def test_all_data(self):
