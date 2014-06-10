@@ -6,7 +6,7 @@ except ImportError:
 long_desc=open('README.rst','r').read()
 
 setup(name="pyclj",
-      version="0.2.1",
+      version="0.2.2",
       author="Sun Ning",
       author_email="sunng@about.me",
       description="clojure literal reader and writer for python",
