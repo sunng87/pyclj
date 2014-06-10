@@ -46,6 +46,7 @@ __all__ = ["dump", "dumps", "load", "loads"]
 
 import os
 from cStringIO import StringIO
+import json
 
 import decimal
 import uuid
@@ -55,11 +56,13 @@ import pytz
 
 def number(v):
     if v.endswith('M'):
-        return decimal.Decimal(v[:-1])
-    elif '.' in v:
-        return float(v)
+        out = decimal.Decimal(v[:-1])
     else:
-        return int(v)
+        try:
+            out = int(v)
+        except ValueError as e:
+            out = float(v)
+    return out
 
 _STOP_CHARS = [" ", ",", "\n", "\r", "\t"]
 _COLL_OPEN_CHARS = ["#", "[", "{", "("]
@@ -223,8 +226,7 @@ class CljDecoder(object):
                     cp = c
                     c = self.__read_fd(1)
                 e = c
-                #v = u''.join(buf).decode('unicode-escape')
-                v = ''.join(buf).decode('string-escape')
+                v = unicode(''.join(buf).decode('unicode-escape'))
 
             elif t == "datetime":
                 ## skip "inst"
@@ -232,7 +234,7 @@ class CljDecoder(object):
 
                 ## read next value as string
                 s = self.__read_token()
-                if not isinstance(s, str):
+                if not isinstance(s, basestring):
                     raise ValueError('Str expected, but got %s' % str(s))
 
                 ## remove read string from the value_stack
@@ -247,7 +249,7 @@ class CljDecoder(object):
 
                 ## read next value as string
                 s = self.__read_token()
-                if not isinstance(s, str):
+                if not isinstance(s, basestring):
                     raise ValueError('Str expected, but got %s' % str(s))
 
                 ## remove read string from the value_stack
@@ -364,8 +366,8 @@ class CljEncoder(object):
             elif t == "decimal":
                 fd.write(str(d) + 'M')
             elif t == "string":
-                s = d.encode("string-escape").replace('"', '\\"')
-                fd.write('"'+s+'"')
+                s = json.encoder.py_encode_basestring_ascii(unicode(d))
+                fd.write(s)
             elif t == "boolean":
                 if d:
                     fd.write('true')
@@ -383,7 +385,8 @@ class CljEncoder(object):
                 s = str(d)
                 fd.write("#uuid \"%s\"" % s)
             else:
-                fd.write('"'+str(d)+'"')
+                s = json.encoder.py_encode_basestring_ascii(unicode(d))
+                fd.write(s)
 
 def dump(obj, fp):
     return CljEncoder(obj, fp).encode()
