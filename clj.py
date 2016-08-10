@@ -111,6 +111,8 @@ class CljDecoder(object):
         elif c == '#':
             if self.__read_and_back(1) == '{':
                 return ("set", True, "}")
+            if self.__read_and_back(1) == ':':
+                return ("namespaced_dict", True, "}")
             if self.__read_and_back(4) == 'inst':
                 return ("datetime", False, None)
             if self.__read_and_back(4) == 'uuid':
@@ -153,10 +155,20 @@ class CljDecoder(object):
             if t == "set":
                 ## skip {
                 self.__read_fd(1)
+            namespace = None
+            if t == "namespaced_dict":
+                ## skip :
+                self.__read_fd(1)
+                ## get namespace
+                buf = []
+                while c != '{':
+                    c = self.__read_fd(1)
+                    buf.append(c)
+                namespace = ''.join(buf[:-1])
 
             self.terminator = term
 
-            self.value_stack.append(([], self.terminator, t))
+            self.value_stack.append(([], self.terminator, t, namespace))
             return None
         else:
             v = None ## token value
@@ -265,7 +277,7 @@ class CljDecoder(object):
                 e = c
 
             if e == self.terminator:
-                current_scope, _, container = self.value_stack.pop()
+                current_scope, _, container, namespace = self.value_stack.pop()
 
                 if r:
                     current_scope.append(v)
@@ -277,10 +289,11 @@ class CljDecoder(object):
                         v = tuple(current_scope)
                 elif container == "list":
                     v = current_scope
-                elif container == "dict":
+                elif container in ["dict", "namespaced_dict"]:
                     v = {}
                     for i in range(0, len(current_scope), 2):
-                        v[current_scope[i]] = current_scope[i+1]
+                        key = '%s/%s' % (namespace, current_scope[i]) if namespace else current_scope[i]
+                        v[key] = current_scope[i+1]
                 r = True
 
             if r and len(self.value_stack) > 0:
