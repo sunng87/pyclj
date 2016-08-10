@@ -111,7 +111,7 @@ class CljDecoder(object):
         elif c == '#':
             if self.__read_and_back(1) == '{':
                 return ("set", True, "}")
-            if self.__read_fd(1) == ':':
+            if self.__read_and_back(1) == ':':
                 return ("namespaced_dict", True, "}")
             if self.__read_and_back(4) == 'inst':
                 return ("datetime", False, None)
@@ -157,6 +157,8 @@ class CljDecoder(object):
                 self.__read_fd(1)
             namespace = None
             if t == "namespaced_dict":
+                ## skip :
+                self.__read_fd(1)
                 ## get namespace
                 buf = []
                 while c != '{':
